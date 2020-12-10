@@ -63,18 +63,11 @@ const CheckoutForm = ({ price, onSuccessfulCheckout }) => {
     })
     
 
-<<<<<<< HEAD
     // const handleCardDetailsChange = ev => {
     //   ev.error ? setCheckoutError(ev.error.message) : setCheckoutError();
     // };
 
     onSuccessfulCheckout();
-=======
-      onSuccessfulCheckout();
-    } catch (err) {
-      setCheckoutError(err.message);
-    }
->>>>>>> master
   };
 
   // Learning
