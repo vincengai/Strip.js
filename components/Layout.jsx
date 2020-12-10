@@ -1,4 +1,4 @@
-import Head from "next/head";
+import Head, { defaultHead } from "next/head";
 import styled from "@emotion/styled";
 import GlobalStyles from "./prebuilt/GlobalStyles";
 
@@ -9,6 +9,7 @@ import { Elements } from '@stripe/react-stripe-js';
 // Don't want to load more than you ahve to
 
 const stripePromise = loadStripe(process.env.PUBLISHABLE_KEY);
+// console.log(stripePromise, 'this is the stripe promis');
 
 const Layout = ({ children, title }) => {
   return (
@@ -25,3 +26,7 @@ const Layout = ({ children, title }) => {
 };
 
 export default Layout;
+
+
+
+

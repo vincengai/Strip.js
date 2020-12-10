@@ -8,7 +8,6 @@ import SubmitButton from "./prebuilt/SubmitButton";
 import CheckoutError from "./prebuilt/CheckoutError";
 
 import {CardElement} from '@stripe/react-stripe-js';
-import styles from './CheckoutForm.module.css';
 
 const CardElementContainer = styled.div`
   height: 40px;
@@ -40,14 +39,50 @@ const CheckoutForm = ({ price, onSuccessfulCheckout }) => {
     };
   };
 
+  // const {data: clientSecret } = await axios.post('/api/payment_intents', {
+  //   // reason being *100 , stripe interprets 1$ and 100cents. 
+  //   amount: price * 100,
+  // });
+  //create a payment intent on the server
+  //  client_secret of that payment intent
+
+  // need reference to the CardElement
+  // need stripe.js 
+  // create a payment method
+   
+  // confirm the card Payments
+  //payment method id
+  //client_secret 
+  const cardElementOptions = {
+    // injecting styles into that iframe
+    // base , invalid input, or completed input
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#fff',
+        "::placeholder": {
+          color: '#87bbfd'
+        }
+      },
+      invalid: {
+        color: '#FFC7EE',
+        iconColor: "FFC7EE"
+      },
+      complete: {
+      }
+    },
+    hidePostalCode: true
+  }
+
+
   return (
     <form onSubmit={handleFormSubmit}>
       <Row>
         <BillingDetailsFields />
       </Row>
       <Row>
-        <CardElementContainer className={styles.container}>
-          <CardElement className={styles.element}/>
+        <CardElementContainer>
+          <CardElement options={cardElementOptions}/>
         </CardElementContainer>
       </Row>
       {checkoutError && <CheckoutError>{checkoutError}</CheckoutError>}
