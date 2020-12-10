@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import styled from "@emotion/styled";
 import axios from "axios";
 
@@ -7,13 +8,10 @@ import BillingDetailsFields from "./prebuilt/BillingDetailsFields";
 import SubmitButton from "./prebuilt/SubmitButton";
 import CheckoutError from "./prebuilt/CheckoutError";
 
-import {CardElement} from '@stripe/react-stripe-js';
-
 const CardElementContainer = styled.div`
   height: 40px;
   display: flex;
   align-items: center;
-
   & .StripeElement {
     width: 100%;
     padding: 15px;
@@ -23,6 +21,14 @@ const CardElementContainer = styled.div`
 const CheckoutForm = ({ price, onSuccessfulCheckout }) => {
   const [isProcessing, setProcessingTo] = useState(false);
   const [checkoutError, setCheckoutError] = useState();
+
+  const stripe = useStripe();
+  const elements = useElements();
+
+  // TIP
+  // use the cardElements onChange prop to add a handler
+  // for setting any errors:
+
 
   const handleFormSubmit = async ev => {
     ev.preventDefault();
@@ -37,43 +43,68 @@ const CheckoutForm = ({ price, onSuccessfulCheckout }) => {
         postal_code: ev.target.zip.value
       }
     };
+
+    setProcessingTo(true);
+
+    const cardElement = elements.getElement("card");
+
+    const { data: clientSecret } = await axios.post("/api/payment_intents", {
+      amount: price * 100
+    });
+
+    const paymentMethodReq = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+      billing_details: billingDetails
+    });
+
+    const confirmedCardPayment = await stripe.confirmCardPayment(clientSecret, {
+      paymont_method: paymentMethodReq.paymentMethod.id
+    })
+    
+
+    // const handleCardDetailsChange = ev => {
+    //   ev.error ? setCheckoutError(ev.error.message) : setCheckoutError();
+    // };
+
+    onSuccessfulCheckout();
   };
 
-  // const {data: clientSecret } = await axios.post('/api/payment_intents', {
-  //   // reason being *100 , stripe interprets 1$ and 100cents. 
-  //   amount: price * 100,
-  // });
-  //create a payment intent on the server
-  //  client_secret of that payment intent
+  // Learning
+  // A common ask/bug that users run into is:
+  // How do you change the color of the card element input text?
+  // How do you change the font-size of the card element input text?
+  // How do you change the placeholder color?
+  // The answer to all of the above is to use the `style` option.
+  // It's common to hear users confused why the card element appears impervious
+  // to all their styles. No matter what classes they add to the parent element
+  // nothing within the card element seems to change. The reason for this is that
+  // the card element is housed within an iframe and:
+  // > styles do not cascade from a parent window down into its iframes
 
-  // need reference to the CardElement
-  // need stripe.js 
-  // create a payment method
-   
-  // confirm the card Payments
-  //payment method id
-  //client_secret 
-  const cardElementOptions = {
-    // injecting styles into that iframe
-    // base , invalid input, or completed input
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#fff',
-        "::placeholder": {
-          color: '#87bbfd'
-        }
-      },
-      invalid: {
-        color: '#FFC7EE',
-        iconColor: "FFC7EE"
-      },
-      complete: {
+  const iframeStyles = {
+    base: {
+      color: "#fff",
+      fontSize: "16px",
+      iconColor: "#fff",
+      "::placeholder": {
+        color: "#87bbfd"
       }
     },
-    hidePostalCode: true
-  }
+    invalid: {
+      iconColor: "#FFC7EE",
+      color: "#FFC7EE"
+    },
+    complete: {
+      iconColor: "#cbf4c9"
+    }
+  };
 
+  const cardElementOpts = {
+    iconStyle: "solid",
+    style: iframeStyles,
+    hidePostalCode: true
+  };
 
   return (
     <form onSubmit={handleFormSubmit}>
@@ -82,12 +113,15 @@ const CheckoutForm = ({ price, onSuccessfulCheckout }) => {
       </Row>
       <Row>
         <CardElementContainer>
-          <CardElement options={cardElementOptions}/>
+          <CardElement
+            options={cardElementOpts}
+          />
         </CardElementContainer>
       </Row>
       {checkoutError && <CheckoutError>{checkoutError}</CheckoutError>}
       <Row>
-        <SubmitButton disabled={isProcessing}>
+        {/* TIP always disable your submit button while processing payments */}
+        <SubmitButton disabled={isProcessing || !stripe}>
           {isProcessing ? "Processing..." : `Pay $${price}`}
         </SubmitButton>
       </Row>
